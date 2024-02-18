@@ -1,4 +1,4 @@
-pipeline {
+ pipeline {
      agent {
     kubernetes {
       yaml '''
@@ -12,50 +12,64 @@ pipeline {
             - cat
             tty: true
           - name: docker
-            image: docker:latest
-            command:
-            - cat
+            image: docker:dind
+            command: ["sh"]
+            args: ["/usr/local/bin/dockerd-entrypoint.sh"]
             tty: true
-            volumeMounts:
-             - mountPath: /var/run/docker.sock
-               name: docker-sock
-          volumes:
-          - name: docker-sock
-            hostPath:
-              path: /var/run/docker.sock    
+            env:
+              - name: DOCKER_TLS_CERTDIR
+                value: ""
+              - name: DOCKER_HOST
+                value: tcp://localhost:2375
+            securityContext:
+              privileged: true
+              runAsUser: 0
         '''
     }
   }
 
 
     stages {
-        stage('Checkout & Build') {
+        stage('Checkout') {
             steps {
                 container('maven') {
                 // Get some code from a GitHub repository
                 git 'https://github.com/omkarp741/java-docker-app.git'
-
-                // Run Maven on a Unix agent.
-                sh "mvn -Dmaven.test.failure.ignore=true clean package"
-
+                
+                }
             }
-            }
-
         }
-        stage('Docker build, tag & Push') {
+                
+        stage('build'){
+            steps {
+                container('maven') {
+                    // Run Maven on a Unix agent.
+                sh "mvn -Dmaven.test.failure.ignore=true clean package"
+                }
+            }
+        }
+
+        stage('Docker build & tag') {
             steps {
                 container('docker') {
                 // Build Docker image with Tag as Build number
                 sh 'docker build -t omkarp741/java-dockerapp:$BUILD_NUMBER -f Dockerfile .'
                 
-                sh 'docker login -u omkarp741 -p $REG_PASSWD'
+                }
+            }
+        }
+                
+        stage('login & push') {
+            steps {
+                container('docker') {
+                 sh 'docker login -u omkarp741 -p dckr_pat_FkhKsHPuriVgi5-w9gNqLhQWd4o'
 
                 // Push Docker image
                 sh 'docker push omkarp741/java-dockerapp:$BUILD_NUMBER'
-
+                }
             }
-            }
+        }        
 
-        }
-    }
+
+}
 }
