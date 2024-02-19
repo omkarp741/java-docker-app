@@ -1,30 +1,30 @@
- pipeline {
+  pipeline {
      agent {
-    kubernetes {
-      yaml '''
-        apiVersion: v1
-        kind: Pod
-        spec:
-          containers:
-          - name: maven
-            image: maven:alpine
-            command:
-            - cat
-            tty: true
-          - name: docker
-            image: docker:dind
-            command: ["sh"]
-            args: ["/usr/local/bin/dockerd-entrypoint.sh"]
-            tty: true
-            env:
-              - name: DOCKER_TLS_CERTDIR
-                value: ""
-              - name: DOCKER_HOST
-                value: tcp://localhost:2375
-            securityContext:
-              privileged: true
-              runAsUser: 0
-        '''
+        kubernetes {
+          yaml '''
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: maven
+                image: maven:alpine
+                command:
+                - cat
+                tty: true
+              - name: docker
+                image: docker:dind
+                command: ["sh"]
+                args: ["/usr/local/bin/dockerd-entrypoint.sh"]
+                tty: true
+                env:
+                  - name: DOCKER_TLS_CERTDIR
+                    value: ""
+                  - name: DOCKER_HOST
+                    value: tcp://localhost:2375
+                securityContext:
+                  privileged: true
+                  runAsUser: 0
+            '''
     }
   }
 
